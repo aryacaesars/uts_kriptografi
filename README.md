@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KriptoLab — UTS Kriptografi
 
-## Getting Started
+Aplikasi Next.js untuk bagian Anggota 1: GUI, sanitizer, Vigenere Standard, Auto-Key Vigenere, Affine, dan integrasi bahan modul Anggota 2. Semua pemrosesan pesan dan file berjalan di browser.
 
-First, run the development server:
+## Menjalankan
 
-```bash
+Gunakan Node.js 22 LTS dan npm. Dari folder proyek ini:
+
+```powershell
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Buka http://localhost:3000. Untuk versi produksi:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```powershell
+npm run build
+npm run start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Menggunakan aplikasi
 
-## Learn More
+1. Pilih algoritma dan operasi Enkripsi/Dekripsi.
+2. Isi kunci. Affine memakai a dan b; Super juga memakai kunci/jumlah kolom; Enigma memakai konfigurasi rotor.
+3. Ketik pesan atau unggah file. Cipher alfabet menerima teks UTF-8 dan membuang selain A-Z; Extended/Super menerima file sembarang sampai 10 MiB.
+4. Proses pesan. Hasil dapat ditampilkan kapital, kecil, atau Base64 sesuai jenis data. Base64 mempertahankan kapitalisasi aslinya karena peka huruf besar/kecil.
+5. Salin atau unduh hasil. Enkripsi mengunduh kontainer `.dat` dengan metadata ekstensi. Untuk memulihkan file, pilih algoritma/kunci yang sama, Dekripsi, Unggah berkas, lalu pilih `.dat`.
+6. Untuk hasil salinan Base64, gunakan Teks langsung dan encoding Base64. Salinan merupakan payload, sedangkan unduhan `.dat` mengandung header KRIP.
 
-To learn more about Next.js, take a look at the following resources:
+Tombol Balikkan proses memindahkan payload hasil ke input teks. Untuk mempertahankan ekstensi file biner, gunakan alur unduh/upload `.dat`. Teks alfabet pulih sebagai teks tersanitasi `.txt`; pemulihan byte file asli berlaku untuk Extended/Super.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Verifikasi
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```powershell
+npm test
+npm run lint
+npm run build
+```
 
-## Deploy on Vercel
+Uji browser opsional membutuhkan Playwright, Chromium, dan server yang berjalan:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```powershell
+npm install --no-save --package-lock=false playwright
+npx playwright install chromium
+npm run start -- --hostname 127.0.0.1 --port 3100
+# Terminal kedua:
+npm run test:browser
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Jika Playwright sudah tersedia di lokasi lain, isi `$env:PLAYWRIGHT_MODULE` dengan path folder modulnya. Isi `$env:APP_URL` bila server memakai alamat/port lain. Browser test menghasilkan screenshot, hasil JSON, dan file uji sintetis di `docs/bukti/`. `npm test` memakai test runner bawaan Node tanpa proses anak agar berjalan dalam sandbox Windows.
+
+## Status dan serah terima
+
+Seluruh delapan algoritma pada selector telah terhubung, termasuk Hill Cipher ordo 2?2 dan 3?3. Matriks divalidasi langsung; padding X tetap tampak setelah dekripsi. [Panduan serah terima](docs/SERAH_TERIMA_ANGGOTA_1.md) memuat pekerjaan QA dan laporan kelompok yang tersisa.
+
+[Laporan bagian Anggota 1](docs/LAPORAN_ANGGOTA_1.pdf), versi DOCX/Markdown, serta screenshot disimpan dalam `docs/`. Laporan ini bukan laporan final kelompok. QA lima media nyata dan kompilasi akhir menjadi pekerjaan Anggota 3 sesuai pembagian.
+
+Kontainer KRIP mengikuti kontrak: `KRIP + panjang ekstensi (1 byte) + ekstensi ASCII + payload`. Algoritma dan kunci tidak disimpan; kunci keliru tidak dapat dideteksi otomatis. Playfair mempertahankan sisipan X/Z. Berkas tanpa ekstensi menggunakan `.bin`.
+
+Bahan awal berasal dari `../src`; sumber asli tidak diubah. Dependensi runtime baru tidak ditambahkan. Identitas pada dokumen pembagian perlu diselaraskan oleh kelompok sebelum penyerahan.
+# uts_kriptografi

@@ -1,0 +1,189 @@
+<!doctype html><html lang="id"><meta charset="utf-8"><title>Laporan Bagian Anggota 1</title><style>@page{size:A4;margin:18mm}body{font:11pt/1.5 Arial;color:#182b3a}h1{font-size:19pt;color:#125c4c;margin-top:20pt}h2{font-size:13pt;margin-top:16pt}h1,h2{break-after:avoid}p{text-align:justify}table{border-collapse:collapse;width:100%;font-size:9pt;table-layout:fixed;break-inside:avoid}th,td{border:1px solid #b9c9cc;padding:7px;overflow-wrap:anywhere;vertical-align:top}th{background:#e9f2ef;text-align:left}tr{break-inside:avoid}pre{break-inside:avoid;font:8pt/1.4 Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6f7;padding:10px}.pagebreak{break-before:page}.screenshot{display:block;max-width:100%;max-height:220mm;width:auto;height:auto;margin:10px auto}p,pre{orphans:3;widows:3}</style><body><h1>Laporan Bagian Anggota 1</h1>
+<h2>KriptoLab — Project UTS Kriptografi</h2>
+<p>Program Studi Informatika, Fakultas Teknik, Universitas Siliwangi. Dosen pengampu: Ir. Randi Rizal, Ph.D.</p>
+<p>Lingkup: antarmuka web, sanitizer, Vigenere Standard, Auto-Key Vigenere, Affine Cipher, serta integrasi antarmuka dengan modul kelompok yang telah tersedia.</p>
+<p>Identitas penyusun: [konfirmasi nama dan NPM Anggota 1 sebelum laporan digabungkan]. Kontrak resmi menempatkan Dhiya Ulhaq Prima Yuga (237006066) sebagai Anggota 1, sedangkan catatan teknis mencantumkan penyusun Arya Achmad Caesar. Paket ini mengikuti peran Anggota 1 sesuai instruksi pengguna.</p>
+<p>Status dokumen: materi serah terima bagian Anggota 1, bukan laporan akhir seluruh kelompok. Hill telah diintegrasikan; QA lima media nyata dan kompilasi laporan kelompok masih menunggu.</p>
+<p>Tanggal penyusunan: 8 Oktober 2026. Waktu bukti browser (UTC): 2026-10-08T05:15:04.562Z.</p>
+<h1>BAB I. Pendahuluan</h1>
+<h2>1.1 Latar belakang</h2>
+<p>Praktikum kriptografi memerlukan antarmuka yang menghubungkan konsep transformasi pesan dengan hasil yang dapat diperiksa. KriptoLab menyediakan ruang kerja untuk memilih cipher, memasukkan kunci, mengenkripsi atau mendekripsi pesan, dan meninjau representasi Base64. Pembedaan cipher alfabet dan cipher byte ditampilkan agar pengguna memahami data yang dipertahankan selama pemrosesan.</p>
+<h2>1.2 Tujuan</h2>
+<p>Tujuan bagian Anggota 1 adalah mengimplementasikan tiga cipher klasik sesuai kontrak fungsi kelompok; menyediakan sanitasi alfabet A–Z; membangun antarmuka responsif untuk teks dan berkas; menghubungkan modul yang tersedia; serta menyiapkan bukti pengujian dan tangkapan layar untuk laporan kelompok.</p>
+<h2>1.3 Ruang lingkup dan pembagian</h2>
+<table><thead><tr><th>Peran</th><th>Lingkup</th></tr></thead><tbody><tr><td>Anggota 1</td><td>GUI, sanitizer, Vigenere Standard, Auto-Key, Affine, helper tampilan, materi UI/Bab I.</td></tr><tr><td>Anggota 2</td><td>Playfair, Extended Vigenere, Super, Enigma, kontainer KRIP. Bahan tersedia dan diintegrasikan.</td></tr><tr><td>Anggota 3</td><td>Hill 2x2/3x3, QA lima media nyata, kompilasi laporan akhir dan README kelompok.</td></tr></tbody></table>
+<p>Teks alfabet dipulihkan sebagai hasil sanitasi, sehingga spasi, angka, dan tanda baca tidak kembali. Pemulihan byte mentah beserta format file memakai Extended Vigenere atau Super Enkripsi. Implementasi menggunakan JavaScript/TypeScript sehingga bonus Ruby tidak diterapkan.</p>
+<h1>BAB II. Rancangan dan Algoritma Anggota 1</h1>
+<h2>2.1 Arsitektur aplikasi</h2>
+<p>Next.js 16.4.0 menyediakan halaman dan aset aplikasi. Komponen interaktif berjalan sebagai Client Component dengan React. Alur pemrosesan: form pengguna → Uint8Array melalui TextEncoder/File.arrayBuffer → processRequest → modul cipher → tampilan dan Blob unduhan. Pesan, file, serta kunci diproses di browser. Tidak ada endpoint server untuk mengirimkan data kriptografi.</p>
+<h2>2.2 Sanitasi dan representasi</h2>
+<p>sanitizeText(text) membuang karakter selain a–z/A–Z sebelum mengubah menjadi huruf kapital. Contoh: Halo, Dunia 123! menjadi HALODUNIA. Penyaringan sebelum uppercase mencegah huruf non-ASCII yang berubah menjadi ASCII saat uppercase ikut masuk. Kunci Vigenere dan Auto-Key juga disanitasi; kunci yang tidak menyisakan huruf ditolak.</p>
+<p>Base64 mengubah representasi byte menjadi teks dan tidak menambah kerahasiaan. Helper mengonversi string menjadi UTF-8 terlebih dahulu. Besar/kecil huruf Base64 dipertahankan; format huruf kapital/kecil hanya diterapkan pada keluaran cipher alfabet. Pratinjau layar dibatasi 12.000 karakter, tetapi salin dan unduh menggunakan hasil lengkap.</p>
+<h2>2.3 Vigenere Standard</h2>
+<p>Huruf dipetakan A=0 hingga Z=25. Dengan panjang kunci m, enkripsi memakai C[i]=(P[i]+K[i mod m]) mod 26. Dekripsi memakai P[i]=(C[i]−K[i mod m]+26) mod 26. Kunci berulang sepanjang pesan. Contoh pemeriksaan independen: ATTACKATDAWN dengan LEMON menghasilkan LXFOPVEFRNHR.</p>
+<h2>2.4 Auto-Key Vigenere</h2>
+<p>Aliran kunci dibentuk dari kunci awal diikuti plainteks, bukan pengulangan kunci. Enkripsi memakai C[i]=(P[i]+S[i]) mod 26. Dekripsi dilakukan berurutan: setelah posisi kunci awal terlewati, huruf plainteks yang sudah ditemukan menjadi kunci untuk posisi berikutnya. ATTACKATDAWN dengan QUEENLY menghasilkan QNXEPVYTWTWP. Memakai cipherteks sebagai tambahan aliran kunci akan menghasilkan varian yang berbeda dan tidak sesuai kontrak tugas ini.</p>
+<h2>2.5 Affine Cipher</h2>
+<p>Enkripsi memakai C=(aP+b) mod 26, sedangkan dekripsi memakai P=a⁻¹(C−b) mod 26. Parameter a harus integer yang relatif prima dengan 26 dan b harus integer 0–25. Nilai a valid modulo 26 ialah 1,3,5,7,9,11,15,17,19,21,23,25. Invers dicari dengan menguji a·x mod 26=1. Untuk a=7 diperoleh invers 15. Input a=13 ditolak pada GUI dan fungsi karena tidak memiliki invers.</p>
+<h2>2.6 Integrasi berkas</h2>
+<p>File dienkripsi sebagai byte mentah oleh Extended/Super, lalu dibungkus: 4 byte KRIP + 1 byte panjang ekstensi + ekstensi ASCII + payload terenkripsi. Header asli file berada di dalam payload dan ikut dienkripsi; KRIP merupakan header kontainer baru. unpackageBinaryFile mengembalikan originalExtension dan encryptedBytes sesuai kontrak resmi, kemudian payload didekripsi. Algoritma/kunci tidak disimpan dalam kontainer dan harus ditentukan pengguna.</p>
+<p>Input dibatasi 10 MiB; unggahan dekripsi diperbolehkan memiliki tambahan maksimum 260 byte header kontainer agar batas tersebut tetap dapat dipulihkan. File alfabet hanya diproses sebagai teks UTF-8 dan hasil dekripsinya diunduh sebagai .txt. File tanpa ekstensi pada jalur byte menggunakan .bin.</p>
+<h1>BAB III. Antarmuka dan Cara Penggunaan</h1>
+<p>Antarmuka dibagi menjadi konfigurasi cipher, masukan, dan hasil. Form kunci berubah sesuai algoritma: teks untuk Vigenere/Auto-Key, pengali dan pergeseran untuk Affine, matriks untuk Hill, kunci transposisi untuk Super, serta rotor/ring/reflektor/plugboard untuk Enigma. Tema gelap/terang disimpan sebagai preferensi lokal. Layout dua kolom menjadi satu kolom pada layar kecil.</p>
+<p>Alur teks: pilih cipher → tentukan kunci → ketik pesan → Enkripsi pesan → tinjau hasil → Balikkan proses → Dekripsi pesan. Alur file: pilih cipher byte → unggah file → enkripsi → Unduh hasil .dat → pilih Dekripsi dan unggah .dat → unduh file dengan ekstensi semula. Jika memakai hasil salinan, pilih encoding Base64 untuk payload byte. Metadata ekstensi hanya dipertahankan melalui kontainer .dat.</p>
+<p>Hill menyediakan masukan matriks 2x2 atau 3x3 dengan validasi determinan langsung; tombol proses nonaktif jika matriks tidak valid. Padding X dipertahankan pada dekripsi. Pesan kesalahan ditampilkan dekat hasil dengan role alert; perubahan parameter membersihkan hasil lama untuk menghindari keluaran yang tidak sesuai konfigurasi saat ini.</p>
+<h1>BAB IV. Pengujian Bagian Anggota 1</h1>
+<p>Pengujian logika memakai test runner bawaan Node.js: 14 kelompok uji mencakup known-answer, round trip, sanitasi Unicode, kunci tidak valid, semua nilai a valid dan b 0–25, Base64, kontainer rusak, integrasi byte, batas ukuran 10 MiB, dan status Hill. Uji browser otomatis dijalankan pada Chromium 151.0.7922.34 terhadap build produksi lokal; 13 pemeriksaan tercatat tanpa page error, termasuk vektor Hill HELP -&gt; HIAT dan round-trip di GUI.</p>
+<table><thead><tr><th>Cipher</th><th>Plainteks tersanitasi</th><th>Cipherteks</th><th>Dekripsi</th></tr></thead><tbody><tr><td>Vigenere</td><td>KRIPTOGRAFIUNSIL</td><td>LROJLPGXUXJUTMAM</td><td>Sesuai</td></tr><tr><td>Auto-Key</td><td>TEKNIKINFORMATIKA</td><td>NRCVTDMXSWBUNYWBM</td><td>Sesuai</td></tr><tr><td>Affine</td><td>UNIVERSITASSILIWANGI</td><td>UXOBMZGONKGGOJOIKXAO</td><td>Sesuai</td></tr><tr><td>Hill</td><td>HELP</td><td>HIAT</td><td>Sesuai</td></tr></tbody></table>
+<p>Kunci contoh: Vigenere BAGUS; Auto-Key UNSIL; Affine a=7 dan b=10. File teks sintetis berisi Halo, Dunia! 123 diikuti baris Kriptografi. dipulihkan sebagai HALODUNIAKRIPTOGRAFI oleh ketiga cipher Anggota 1.</p>
+<p>Pengujian browser juga mengunduh dan mengunggah kembali berkas sintetis 1.025 byte pada Extended dan Super. Byte hasil dibandingkan langsung dengan input, dan SHA-256 dicatat dalam browser-results.json. Hal ini membuktikan kesamaan byte untuk fixture yang diuji; tidak menggantikan bukti lima media asli, pengujian pemutar audio/video, atau penilaian keamanan algoritma.</p>
+<table><thead><tr><th>Aspek</th><th>Hasil / batas bukti</th></tr></thead><tbody><tr><td>Vigenere, Auto-Key, Affine</td><td>Known-answer, round trip teks, upload/download teks tersanitasi lulus.</td></tr><tr><td>Sanitizer / Base64</td><td>Filter A–Z, UTF-8, byte 0–255, input tidak valid, clipboard browser lulus.</td></tr><tr><td>UI</td><td>Tema gelap/terang, persistensi tema, error Affine, layar 390 px tanpa overflow horizontal lulus.</td></tr><tr><td>Integrasi Anggota 2</td><td>Byte sintetis Extended/Super lulus; known-answer Playfair/Enigma lulus pada uji logika.</td></tr><tr><td>Hill</td><td>Vektor 2x2/3x3, padding dan validasi matriks lulus.</td></tr><tr><td>QA lima media asli</td><td>Belum dilakukan dalam paket Anggota 1; dilanjutkan Anggota 3.</td></tr></tbody></table>
+<p>Validasi build/lint dan log test disimpan di docs/bukti. Tabel evaluasi sembilan butir final wajib disusun setelah seluruh kelompok menyelesaikan integrasi serta QA; tabel rencana pada breakdown tidak disalin menjadi klaim keberhasilan.</p>
+<h1>BAB V. Kesimpulan dan Serah Terima</h1>
+<p>Bagian Anggota 1 menyediakan antarmuka yang dapat dijalankan, tiga cipher klasik sesuai kontrak, sanitasi, Base64, dan alur file terintegrasi. Pengujian yang dijalankan mendukung hasil pada kasus uji yang didokumentasikan. Keluaran alfabet tidak memulihkan karakter yang dibuang, sedangkan jalur byte memulihkan fixture yang diuji secara identik.</p>
+<p>Anggota 3 perlu menguji dokumen/gambar/database/audio/video nyata, melengkapi tabel sembilan butir, dan menggabungkan laporan kelompok. Hill sudah tersedia di aplikasi. Anggota 2 perlu meninjau penjelasan teknis modul biner dan cipher miliknya. Identitas penyusun serta tenggat Classroom perlu dicocokkan sebelum penyerahan.</p>
+<h2>Acuan pekerjaan</h2>
+<p>Soal UTS Kriptografi 20261.pdf: naskah lokal 3 halaman, spesifikasi program, GUI, file, dan laporan.</p>
+<p>breakdown tugas.txt; KONTRAK_INTERFACE_DAN_FUNGSI.txt; CATATAN_DAN_PANDUAN_ANGGOTA_1.txt; ALUR_KERJA_DAN_URUTAN_PENGERJAAN.txt: bahan lokal pembagian dan kontrak kelompok.</p>
+<p>Folder bahan ../src: sumber awal UI dan modul; disalin lalu disesuaikan di proyek uts-kriptografi. Atribusi modul Anggota 2 dipertahankan.</p>
+<p>Panduan lokal Next.js 16.4.0: node_modules/next/dist/docs/01-app/01-getting-started, bagian layouts/pages, server/client components, dan CSS.</p>
+<p>tests/ciphers.test.mjs; tests/browser-smoke.mjs; docs/bukti/browser-results.json: prosedur dan bukti pengujian aktual.</p>
+<div class="pagebreak"></div>
+<h1>Lampiran A.1. Vigenere Standard — tema gelap</h1>
+<p>Pesan contoh KRIPTOGRAFI UNSIL, kunci BAGUS, dan hasil enkripsi yang dihitung aplikasi.</p>
+<img class="screenshot" src="bukti/01-vigenere-dark.png" alt="Vigenere Standard — tema gelap">
+<div class="pagebreak"></div>
+<h1>Lampiran A.2. Representasi Base64 — tema terang</h1>
+<p>Payload hasil serta pesan input ditampilkan dalam Base64. Salin hasil diuji melalui clipboard browser.</p>
+<img class="screenshot" src="bukti/02-base64-light.png" alt="Representasi Base64 — tema terang">
+<div class="pagebreak"></div>
+<h1>Lampiran A.3. Dekripsi Auto-Key</h1>
+<p>Plainteks dipulihkan melalui tombol Balikkan proses dengan kunci awal UNSIL.</p>
+<img class="screenshot" src="bukti/03-autokey-dekripsi.png" alt="Dekripsi Auto-Key">
+<div class="pagebreak"></div>
+<h1>Lampiran A.4. Validasi Affine</h1>
+<p>Parameter a=13 tidak relatif prima dengan 26 sehingga pemrosesan ditolak dengan pesan kesalahan.</p>
+<img class="screenshot" src="bukti/04-affine-validasi.png" alt="Validasi Affine">
+<div class="pagebreak"></div>
+<h1>Lampiran A.5. Enkripsi dan unduhan .dat</h1>
+<p>File sintetis 1.025 byte dienkripsi melalui Super. Ini bukti alur GUI, bukan media asli final kelompok.</p>
+<img class="screenshot" src="bukti/05-super-file.png" alt="Enkripsi dan unduhan .dat">
+<div class="pagebreak"></div>
+<h1>Lampiran A.6. Pemulihan file dari .dat</h1>
+<p>File .dat hasil unduhan diunggah kembali; hasil dekripsi dibandingkan byte demi byte dengan fixture asli.</p>
+<img class="screenshot" src="bukti/06-super-file-dekripsi.png" alt="Pemulihan file dari .dat">
+<div class="pagebreak"></div>
+<h1>Lampiran A.7. Antarmuka mobile 390 px</h1>
+<p>Layout satu kolom; pengujian memeriksa tidak ada overflow horizontal pada viewport ini.</p>
+<img class="screenshot" src="bukti/07-mobile.png" alt="Antarmuka mobile 390 px">
+<div class="pagebreak"></div>
+<h1>Lampiran A.8. Hill Cipher dan validasi input</h1>
+<p>Matriks 2×2 valid. Dekripsi ABC ditolak kerana panjang cipherteks bukan kelipatan ordo.</p>
+<img class="screenshot" src="bukti/08-hill.png" alt="Hill Cipher dan validasi input">
+<div class="pagebreak"></div>
+<h1>Lampiran B. Kode Modul Anggota 1</h1>
+<p>Kode di bawah diambil langsung dari implementasi yang diuji. Kode GUI dan integrasi lengkap tersedia di components/CipherWorkbench.jsx, app/globals.css, dan src/lib/workbench.js dalam paket proyek; modul anggota lain tetap berada di src/modules.</p>
+<h2>sanitizer.js</h2>
+<pre>/** Kontrak Anggota 1: alfabet ASCII A-Z saja. */
+export function sanitizeText(text) {
+  if (typeof text !== &quot;string&quot;) throw new TypeError(&quot;Teks harus berupa string.&quot;);
+  return text.replace(/[^a-zA-Z]/g, &quot;&quot;).toUpperCase();
+}
+
+export function requireAlphabetKey(key) {
+  const clean = sanitizeText(key);
+  if (!clean) throw new Error(&quot;Kunci harus mengandung setidaknya satu huruf A-Z.&quot;);
+  return clean;
+}
+</pre>
+<h2>vigenere_standard.js</h2>
+<pre>import { sanitizeText, requireAlphabetKey } from &quot;./sanitizer.js&quot;;
+
+function transform(text, key, direction) {
+  const clean = sanitizeText(text);
+  const seed = requireAlphabetKey(key);
+  return Array.from(clean, (letter, i) =&gt; String.fromCharCode(
+    (letter.charCodeAt(0) - 65 + direction * (seed.charCodeAt(i % seed.length) - 65) + 26) % 26 + 65
+  )).join(&quot;&quot;);
+}
+
+export function encryptVigenereStandard(plaintext, key) { return transform(plaintext, key, 1); }
+export function decryptVigenereStandard(ciphertext, key) { return transform(ciphertext, key, -1); }
+</pre>
+<h2>autokey_vigenere.js</h2>
+<pre>import { sanitizeText, requireAlphabetKey } from &quot;./sanitizer.js&quot;;
+
+export function encryptAutoKeyVigenere(plaintext, key) {
+  const plain = sanitizeText(plaintext);
+  const stream = requireAlphabetKey(key) + plain;
+  return Array.from(plain, (letter, i) =&gt; String.fromCharCode(
+    (letter.charCodeAt(0) + stream.charCodeAt(i) - 130) % 26 + 65
+  )).join(&quot;&quot;);
+}
+
+export function decryptAutoKeyVigenere(ciphertext, key) {
+  const cipher = sanitizeText(ciphertext);
+  const seed = requireAlphabetKey(key);
+  const plain = [];
+  for (let i = 0; i &lt; cipher.length; i++) {
+    const k = i &lt; seed.length ? seed[i] : plain[i - seed.length];
+    plain.push(String.fromCharCode((cipher.charCodeAt(i) - k.charCodeAt(0) + 26) % 26 + 65));
+  }
+  return plain.join(&quot;&quot;);
+}
+</pre>
+<h2>affine_cipher.js</h2>
+<pre>import { sanitizeText } from &quot;./sanitizer.js&quot;;
+
+export const AFFINE_A_VALUES = [1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25];
+export function modInverse(a, m = 26) {
+  if (!Number.isSafeInteger(a) || !Number.isSafeInteger(m) || m &lt; 2) return null;
+  const value = ((a % m) + m) % m;
+  for (let x = 1; x &lt; m; x++) if ((value * x) % m === 1) return x;
+  return null;
+}
+
+export function validateAffine(a, b) {
+  if (!Number.isSafeInteger(a) || modInverse(a) === null) {
+    throw new Error(&quot;Nilai a harus bilangan bulat relatif prima dengan 26: 1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25 (mod 26).&quot;);
+  }
+  if (!Number.isInteger(b) || b &lt; 0 || b &gt;= 26) throw new Error(&quot;Nilai b harus bilangan bulat dari 0 sampai 25.&quot;);
+}
+
+export function encryptAffine(plaintext, a, b) {
+  validateAffine(a, b);
+  const normalizedA = ((a % 26) + 26) % 26;
+  return Array.from(sanitizeText(plaintext), ch =&gt; String.fromCharCode((normalizedA * (ch.charCodeAt(0) - 65) + b) % 26 + 65)).join(&quot;&quot;);
+}
+
+export function decryptAffine(ciphertext, a, b) {
+  validateAffine(a, b);
+  const inverse = modInverse(a);
+  return Array.from(sanitizeText(ciphertext), ch =&gt; String.fromCharCode((inverse * (ch.charCodeAt(0) - 65 - b + 26)) % 26 + 65)).join(&quot;&quot;);
+}
+</pre>
+<h2>display_helpers.js</h2>
+<pre>export function bytesToBase64(bytes) {
+  if (!(bytes instanceof Uint8Array)) throw new TypeError(&quot;Data harus berupa Uint8Array.&quot;);
+  const chunks = [];
+  for (let i = 0; i &lt; bytes.length; i += 32768) chunks.push(String.fromCharCode(...bytes.subarray(i, i + 32768)));
+  return btoa(chunks.join(&quot;&quot;));
+}
+
+export function base64ToBytes(value) {
+  const clean = value.replace(/\s/g, &quot;&quot;);
+  if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(clean)) {
+    throw new Error(&quot;Base64 tidak valid. Gunakan Base64 standar beserta padding = jika diperlukan.&quot;);
+  }
+  return Uint8Array.from(atob(clean), ch =&gt; ch.charCodeAt(0));
+}
+
+export function toBase64(textString) { return bytesToBase64(new TextEncoder().encode(textString)); }
+
+export function formatScreenOutput(text, mode) {
+  if (mode === &quot;BASE64&quot;) return toBase64(text);
+  if (mode === &quot;UPPERCASE_NO_SPACE&quot;) return text.replace(/\s/g, &quot;&quot;).toUpperCase();
+  if (mode === &quot;LOWERCASE_NO_SPACE&quot;) return text.replace(/\s/g, &quot;&quot;).toLowerCase();
+  throw new Error(&quot;Mode tampilan tidak dikenal.&quot;);
+}
+</pre></body></html>

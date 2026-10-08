@@ -1,0 +1,68 @@
+{
+  "runAt": "2026-10-08T05:15:04.562Z",
+  "url": "http://127.0.0.1:3102",
+  "browser": "151.0.7922.34",
+  "checks": [
+    "Default Vigenere sample calculated and rendered",
+    "Input/output Base64, clipboard and light theme",
+    {
+      "algorithm": "vigenere",
+      "plaintext": "KRIPTOGRAFIUNSIL",
+      "ciphertext": "LROJLPGXUXJUTMAM",
+      "decrypted": "KRIPTOGRAFIUNSIL"
+    },
+    {
+      "algorithm": "autokey",
+      "plaintext": "TEKNIKINFORMATIKA",
+      "ciphertext": "NRCVTDMXSWBUNYWBM",
+      "decrypted": "TEKNIKINFORMATIKA"
+    },
+    {
+      "algorithm": "affine",
+      "plaintext": "UNIVERSITASSILIWANGI",
+      "ciphertext": "UXOBMZGONKGGOJOIKXAO",
+      "decrypted": "UNIVERSITASSILIWANGI"
+    },
+    "Affine invalid a=13 rejected visibly",
+    {
+      "algorithm": "vigenere",
+      "fileRoundTrip": true,
+      "syntheticFixture": true,
+      "outputSha256": "d4237d13fc2283afe05d4935328c400da77293109063a4fc27fe137d407bb6ef"
+    },
+    {
+      "algorithm": "autokey",
+      "fileRoundTrip": true,
+      "syntheticFixture": true,
+      "outputSha256": "d4237d13fc2283afe05d4935328c400da77293109063a4fc27fe137d407bb6ef"
+    },
+    {
+      "algorithm": "affine",
+      "fileRoundTrip": true,
+      "syntheticFixture": true,
+      "outputSha256": "d4237d13fc2283afe05d4935328c400da77293109063a4fc27fe137d407bb6ef"
+    },
+    {
+      "algorithm": "extended",
+      "fileRoundTrip": true,
+      "syntheticFixture": true,
+      "outputSha256": "b3981d93eeb64aa900f3e48cfcd48e9bbc89b77732c49ea201c93656c62b6a09"
+    },
+    {
+      "algorithm": "super",
+      "fileRoundTrip": true,
+      "syntheticFixture": true,
+      "outputSha256": "b3981d93eeb64aa900f3e48cfcd48e9bbc89b77732c49ea201c93656c62b6a09"
+    },
+    {
+      "algorithm": "hill",
+      "key": "3 3; 2 5",
+      "plaintext": "HELP",
+      "ciphertext": "HIAT",
+      "decrypted": "HELP",
+      "invalidCipherLengthRejected": true
+    },
+    "390px mobile viewport has no horizontal overflow"
+  ],
+  "pageErrors": []
+}
