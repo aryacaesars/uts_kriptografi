@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ALGORITHMS, maxInputBytes, hillAvailable, isBinary, processRequest } from "../src/lib/workbench.js";
 import { base64ToBytes, bytesToBase64, modInverse, sanitizeText, validateHillMatrix } from "../src/modules/index.js";
 
@@ -11,8 +11,6 @@ function Icon({ name, size = 20 }) {
     file: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6"/><path d="M8 13h8M8 17h5"/></>,
     download: <><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></>,
     copy: <><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V3H3v13h5"/></>,
-    sun: <><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></>,
-    moon: <path d="M21 13a9 9 0 1 1-10-10 7 7 0 0 0 10 10z"/>,
     code: <><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-2-15-4 18"/></>,
     check: <path d="m5 12 4 4L19 6"/>,
     swap: <><path d="M3 7h17m-4-4 4 4-4 4M21 17H4m4-4-4 4 4 4"/></>,
@@ -29,7 +27,6 @@ function parseMatrix(value) {
 }
 
 export default function Home() {
-  const [theme, setTheme] = useState("light");
   const [algorithm, setAlgorithm] = useState("vigenere");
   const [operation, setOperation] = useState("encrypt");
   const [source, setSource] = useState("text");
@@ -63,18 +60,7 @@ export default function Home() {
   }
   const hillInvalid = algorithm === "hill" && hillStatus !== null && !hillStatus.isValid;
 
-  useEffect(() => {
-    // Read browser preference after hydration; server rendering uses the light default.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    try { setTheme(localStorage.getItem("kriptolab-theme") === "dark" ? "dark" : "light"); } catch { /* Theme works without storage. */ }
-  }, []);
-
   function change(setter, value) { setter(value); setResult(null); setError(""); setNotice(""); }
-  function toggleTheme() {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    try { localStorage.setItem("kriptolab-theme", next); } catch { /* Optional persistence. */ }
-  }
 
   async function run(event) {
     event.preventDefault(); setError(""); setNotice(""); setResult(null); setBusy(true);
@@ -126,13 +112,21 @@ export default function Home() {
     setResult(null); setError(""); setNotice("");
   }
 
-  return <div className="app-shell" data-theme={theme}>
+  return <div className="app-shell">
     <header className="site-header">
       <a className="brand" href="#workspace" aria-label="KriptoLab beranda">kripto<span>lab</span><span className="brand-period">.</span></a>
-      <div className="header-actions"><span className="course-label">UTS Kriptografi</span><button className="icon-button" type="button" onClick={toggleTheme} aria-label={theme === "dark" ? "Aktifkan mode terang" : "Aktifkan mode gelap"}><Icon name={theme === "dark" ? "sun" : "moon"} size={18}/></button></div>
+      <div className="header-actions"><span className="course-label">UTS Kriptografi</span></div>
     </header>
     <main id="workspace">
-      <div className="workspace-heading"><div><h1>Enkripsi & dekripsi</h1><p>Olah teks atau berkas dengan cipher pilihanmu.</p></div><a className="help-link" href="#panduan" onClick={() => { document.getElementById("panduan").open = true; }}>Cara penggunaan <span aria-hidden="true">&nearr;</span></a></div>
+      <div className="workspace-heading">
+        <div className="heading-copy"><h1>Enkripsi & dekripsi</h1><p>Olah teks atau berkas dengan cipher pilihanmu.</p></div>
+        <div className="heading-runners" aria-hidden="true">
+          <span className="mascot-runner runner-dhiya"><span className="mascot-sprite"/></span>
+          <span className="mascot-runner runner-andi"><span className="mascot-sprite"/></span>
+          <span className="mascot-runner runner-arya"><span className="mascot-sprite"/></span>
+        </div>
+        <a className="help-link" href="#panduan" onClick={() => { document.getElementById("panduan").open = true; }}>Cara penggunaan <span aria-hidden="true"></span></a>
+      </div>
       <form onSubmit={run}>
         <fieldset className="workspace-fieldset" disabled={busy}>
           <div className="configuration">
@@ -174,6 +168,14 @@ export default function Home() {
             <details className="input-preview"><summary>Lihat pesan masukan dan Base64</summary><div className="result-toolbar"><span>{result.normalized ? `Sanitasi: ${result.normalized.slice(0, 100)}${result.normalized.length > 100 ? "…" : ""}` : `${result.inputBytes.length.toLocaleString("id-ID")} byte masukan`}</span><select className="small-select" aria-label="Format pratinjau input" value={inputPreviewMode} onChange={e => setInputPreviewMode(e.target.value)}><option value="base64">Base64</option>{result.inputText !== null && <option value="text">Teks asli</option>}</select></div><textarea aria-label="Pratinjau input" className="output-area" readOnly value={preview.slice(0, PREVIEW_LIMIT)}/><button className="text-button" type="button" onClick={() => copy(preview)}>Salin input lengkap</button></details>
       </>}
       <details className="usage-guide" id="panduan"><summary>Catatan penggunaan</summary><div className="guide-content"><p><strong>Teks alfabet.</strong> Hanya huruf A-Z diproses. Dekripsi mengembalikan teks yang telah disanitasi. Playfair menggabungkan I/J dan mempertahankan huruf sisipan.</p><p><strong>Berkas biner.</strong> Pilih Extended Vigenere atau Super. Unduh hasil .dat, lalu unggah kembali dengan operasi Dekripsi dan kunci yang sama untuk memulihkan ekstensi aslinya.</p><p><strong>Base64.</strong> Untuk memproses hasil salinan, pilih encoding input Base64. Salinan berisi payload; berkas .dat juga menyimpan metadata ekstensi.</p></div></details>
+      <section className="team-showcase" aria-labelledby="team-title">
+        <div className="team-heading"><span className="eyebrow">PIXEL CRYPTO CREW</span><h2 id="team-title">Tiga kepala, satu kunci</h2><p>Animasi kecil untuk tiga anggota di balik KriptoLab.</p></div>
+        <div className="team-grid">
+          <article className="member-card"><div className="member-info"><strong>Dhiya Ulhaq Prima Yuga</strong><span>NPM: 237006066</span></div><div className="pixel-animation mascot-dhiya" aria-label="Maskot Dhiya: cowok berhoodie biru melambaikan tangan" role="img"><span className="mascot-sprite"/></div><span className="animation-name">Dhiya · Halo, kawan!</span></article>
+          <article className="member-card"><div className="member-info"><strong>Andi Rafiyan</strong><span>NPM: 237006074</span></div><div className="pixel-animation mascot-andi" aria-label="Maskot Andi: cowok berjaket dan topi hijau melompat ceria" role="img"><span className="mascot-sprite"/></div><span className="animation-name">Andi · Si paling semangat</span></article>
+          <article className="member-card"><div className="member-info"><strong>Arya Achmad Caesar</strong><span>NPM: 237006093</span></div><div className="pixel-animation mascot-arya" aria-label="Maskot Arya: cowok berkacamata dan berhoodie ungu bergaya peace" role="img"><span className="mascot-sprite"/></div><span className="animation-name">Arya · Keep it cool</span></article>
+        </div>
+      </section>
       <footer className="page-footer"><span>Universitas Siliwangi</span><span>Pesan dan kunci diproses di perangkat ini.</span></footer>
     </main>
   </div>;

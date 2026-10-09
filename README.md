@@ -1,61 +1,95 @@
 # KriptoLab — UTS Kriptografi
 
-Aplikasi Next.js untuk bagian Anggota 1: GUI, sanitizer, Vigenere Standard, Auto-Key Vigenere, Affine, dan integrasi bahan modul Anggota 2. Semua pemrosesan pesan dan file berjalan di browser.
+Aplikasi web kriptografi klasik dan modern (Next.js 16). Seluruh pemrosesan pesan dan berkas berjalan di browser, tidak ada data yang dikirim ke server.
 
-## Menjalankan
+Program Studi Informatika, Universitas Siliwangi. Dosen pengampu: Ir. Randi Rizal, Ph.D.
 
-Gunakan Node.js 22 LTS dan npm. Dari folder proyek ini:
+- Web: https://uts-kriptografi-snowy.vercel.app/
+- Repositori: https://github.com/aryacaesars/uts_kriptografi.git
 
-```powershell
+| Anggota | NPM | Peran |
+|---|---|---|
+| Dhiya Ulhaq Prima Yuga | 237006066 | Hill Cipher, QA lima media nyata, laporan, README |
+| Andi Rafiyan | 237006074 | Playfair, Extended Vigenere, Super Enkripsi, Enigma M3, kontainer `.dat` |
+| Arya Achmad Caesar | 237006093 | Web UI, sanitizer, Vigenere, Auto-Key, Affine, Base64 |
+
+## Fitur
+
+| No | Algoritma | Jenis data |
+|---|---|---|
+| 1 | Vigenere Cipher standard | Teks 26 huruf |
+| 2 | Auto-Key Vigenere Cipher | Teks 26 huruf |
+| 3 | Extended Vigenere Cipher | Byte (modulo 256), berkas sembarang |
+| 4 | Playfair Cipher | Teks 26 huruf (matriks 5x5) |
+| 5 | Affine Cipher | Teks 26 huruf |
+| 6 | Hill Cipher | Teks 26 huruf, matriks 2x2 atau 3x3 |
+| 7 | Super Enkripsi (Extended Vigenere + Transposisi Kolom) | Byte, berkas sembarang |
+| 8 | Bonus: Enigma M3 | Teks 26 huruf |
+
+Aturan umum: cipher 26 huruf hanya memproses A-Z (spasi, angka, tanda baca dibuang, hasil tanpa spasi). Hasil dapat ditampilkan sebagai teks atau Base64. Berkas dibaca sebagai byte mentah termasuk header, sehingga berkas terenkripsi tidak bisa dibuka aplikasi aslinya. Hasil enkripsi berkas disimpan sebagai `.dat` dengan header `KRIP` + panjang ekstensi (1 byte) + ekstensi ASCII + payload, sehingga ekstensi asli pulih otomatis saat dekripsi.
+
+## Menjalankan aplikasi
+
+Prasyarat: Node.js 22 LTS dan npm.
+
+```bash
 npm ci
-npm run dev
+npm run dev        # buka http://localhost:3000
 ```
 
-Buka http://localhost:3000. Untuk versi produksi:
-
-```powershell
-npm run build
-npm run start
-```
+Versi produksi: `npm run build` lalu `npm run start`.
 
 ## Menggunakan aplikasi
 
-1. Pilih algoritma dan operasi Enkripsi/Dekripsi.
-2. Isi kunci. Affine memakai a dan b; Super juga memakai kunci/jumlah kolom; Enigma memakai konfigurasi rotor.
-3. Ketik pesan atau unggah file. Cipher alfabet menerima teks UTF-8 dan membuang selain A-Z; Extended/Super menerima file sembarang sampai 10 MiB.
-4. Proses pesan. Hasil dapat ditampilkan kapital, kecil, atau Base64 sesuai jenis data. Base64 mempertahankan kapitalisasi aslinya karena peka huruf besar/kecil.
-5. Salin atau unduh hasil. Enkripsi mengunduh kontainer `.dat` dengan metadata ekstensi. Untuk memulihkan file, pilih algoritma/kunci yang sama, Dekripsi, Unggah berkas, lalu pilih `.dat`.
-6. Untuk hasil salinan Base64, gunakan Teks langsung dan encoding Base64. Salinan merupakan payload, sedangkan unduhan `.dat` mengandung header KRIP.
+1. Pilih algoritma dan operasi Enkripsi atau Dekripsi.
+2. Isi kunci. Affine memakai a dan b; Super juga memakai kunci kolom; Enigma memakai konfigurasi rotor; Hill memakai matriks (contoh `3 3; 2 5`).
+3. Ketik pesan atau unggah berkas (Extended/Super menerima berkas sembarang sampai 10 MiB).
+4. Proses pesan, lalu salin atau unduh hasil. Enkripsi berkas mengunduh `.dat`. Untuk memulihkan: pilih algoritma dan kunci yang sama, Dekripsi, Unggah berkas, pilih `.dat`.
 
-Tombol Balikkan proses memindahkan payload hasil ke input teks. Untuk mempertahankan ekstensi file biner, gunakan alur unduh/upload `.dat`. Teks alfabet pulih sebagai teks tersanitasi `.txt`; pemulihan byte file asli berlaku untuk Extended/Super.
+## Hill Cipher
 
-## Verifikasi
+Kunci berupa matriks persegi 2x2 atau 3x3. Matriks valid jika `gcd(det(K) mod 26, 26) = 1`; validasi tampil langsung di UI. Jika panjang teks bukan kelipatan ordo, ditambahkan padding `X` yang tetap terlihat setelah dekripsi.
 
-```powershell
-npm test
+| Kunci | Plainteks | Cipherteks |
+|---|---|---|
+| `3 3; 2 5` | `HELP` | `HIAT` |
+| `6 24 1; 13 16 10; 20 17 15` | `ACT` | `POH` |
+| `2 4; 1 2` | - | Ditolak (det = 0) |
+
+## Pengujian
+
+```bash
+npm test           # 14 kelompok uji unit semua cipher
 npm run lint
-npm run build
 ```
 
-Uji browser opsional membutuhkan Playwright, Chromium, dan server yang berjalan:
+### QA lima media nyata
 
-```powershell
+Skrip `qa_media_test.js` mengenkripsi dan mendekripsi berkas nyata (dokumen, gambar, basis data, audio, video) dengan Extended Vigenere dan Super Enkripsi, lalu membandingkan SHA-256 berkas asli dengan hasil dekripsi.
+
+```bash
+node qa_media_test.js <folder_berkas_uji> --engine ./src/modules/index.js --out ./qa_output
+```
+
+Opsi: `--key` (kunci Vigenere, default `KRIPTOGRAFI2026`) dan `--tkey` (kunci transposisi, default `UNSIL`). Keluaran: `*_encrypted.dat`, `*_decrypted.<ext>`, `qa_results.md`, `qa_results.json`. Status keluar 0 bila semua berkas pulih dengan SHA-256 identik.
+
+Hasil pada PDF 588.019 B, JPG 340.860 B, SQLite 12.288 B, MP3 166.180 B, dan MP4 1.740.200 B: seluruh 10 skenario lulus. Ringkasan dan bukti tangkapan layar ada di `docs/bukti_qa/`.
+
+### Uji browser (opsional)
+
+```bash
 npm install --no-save --package-lock=false playwright
 npx playwright install chromium
 npm run start -- --hostname 127.0.0.1 --port 3100
-# Terminal kedua:
-npm run test:browser
+npm run test:browser   # terminal kedua
 ```
 
-Jika Playwright sudah tersedia di lokasi lain, isi `$env:PLAYWRIGHT_MODULE` dengan path folder modulnya. Isi `$env:APP_URL` bila server memakai alamat/port lain. Browser test menghasilkan screenshot, hasil JSON, dan file uji sintetis di `docs/bukti/`. `npm test` memakai test runner bawaan Node tanpa proses anak agar berjalan dalam sandbox Windows.
+## Struktur
 
-## Status dan serah terima
+- `app/`, `components/`: UI Next.js (App Router)
+- `src/modules/`: seluruh cipher, `file_container.js`, `display_helpers.js`
+- `tests/`: `ciphers.test.mjs`, `browser-smoke.mjs`
+- `qa_media_test.js`: skrip QA media nyata
+- `docs/`: laporan, serah terima, bukti tangkapan layar (`bukti/`, `bukti_qa/`)
 
-Seluruh delapan algoritma pada selector telah terhubung, termasuk Hill Cipher ordo 2?2 dan 3?3. Matriks divalidasi langsung; padding X tetap tampak setelah dekripsi. [Panduan serah terima](docs/SERAH_TERIMA_ANGGOTA_1.md) memuat pekerjaan QA dan laporan kelompok yang tersisa.
-
-[Laporan bagian Anggota 1](docs/LAPORAN_ANGGOTA_1.pdf), versi DOCX/Markdown, serta screenshot disimpan dalam `docs/`. Laporan ini bukan laporan final kelompok. QA lima media nyata dan kompilasi akhir menjadi pekerjaan Anggota 3 sesuai pembagian.
-
-Kontainer KRIP mengikuti kontrak: `KRIP + panjang ekstensi (1 byte) + ekstensi ASCII + payload`. Algoritma dan kunci tidak disimpan; kunci keliru tidak dapat dideteksi otomatis. Playfair mempertahankan sisipan X/Z. Berkas tanpa ekstensi menggunakan `.bin`.
-
-Bahan awal berasal dari `../src`; sumber asli tidak diubah. Dependensi runtime baru tidak ditambahkan. Identitas pada dokumen pembagian perlu diselaraskan oleh kelompok sebelum penyerahan.
-# uts_kriptografi
+Catatan: kunci keliru saat dekripsi tidak dapat dideteksi otomatis. Berkas tanpa ekstensi memakai `.bin`.
