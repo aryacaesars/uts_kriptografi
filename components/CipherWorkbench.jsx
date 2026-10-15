@@ -14,6 +14,7 @@ function Icon({ name, size = 20 }) {
     code: <><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-2-15-4 18"/></>,
     check: <path d="m5 12 4 4L19 6"/>,
     swap: <><path d="M3 7h17m-4-4 4 4-4 4M21 17H4m4-4-4 4 4 4"/></>,
+    close: <><path d="m6 6 12 12M18 6 6 18"/></>,
   };
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] || paths.lock}</svg>;
 }
@@ -150,6 +151,7 @@ export default function Home() {
               <div className="panel-heading"><h2 id="input-title">{operation === "encrypt" ? "Pesan asli" : "Cipherteks"}</h2><button type="button" className="text-button" onClick={example}>Isi contoh</button></div>
               <div className="editor-toolbar"><div className="tabs" role="group" aria-label="Sumber input"><button type="button" aria-pressed={source === "text"} className={source === "text" ? "active-tab" : ""} onClick={() => change(setSource, "text")}>Teks langsung</button><button type="button" aria-pressed={source === "file"} className={source === "file" ? "active-tab" : ""} onClick={() => change(setSource, "file")}>Unggah berkas</button></div>{source === "text" && <select aria-label="Encoding input" className="small-select" value={inputEncoding} onChange={e => change(setInputEncoding, e.target.value)}><option value="text">Teks UTF-8</option><option value="base64">Base64</option></select>}</div>
               {source === "text" ? <><label className="sr-only" htmlFor="message">Isi pesan</label><textarea id="message" className="message-area" value={input} placeholder={operation === "encrypt" ? "Tulis pesan di sini..." : "Tempel cipherteks di sini..."} spellCheck="false" onChange={e => change(setInput, e.target.value)}/><div className="editor-meta"><span>{input.length.toLocaleString("id-ID")} karakter</span><span>{inputEncoding === "base64" ? "Base64" : "UTF-8"}</span></div></> : <div className="file-drop"><Icon name="file" size={24}/><strong>{file ? file.name : operation === "encrypt" ? "Pilih berkas untuk dienkripsi" : "Pilih berkas .dat"}</strong><p>{binary ? "Dokumen, gambar, database, audio, atau video." : "Gunakan berkas teks UTF-8."}</p><label className="sr-only" htmlFor="file-input">Pilih berkas</label><input id="file-input" type="file" accept={operation === "decrypt" ? ".dat" : binary ? undefined : ".txt,.md,.csv,.json,.xml,.html,.sql,.log"} onChange={e => change(setFile, e.target.files?.[0] || null)}/><small>{file ? `${file.size.toLocaleString("id-ID")} byte` : "Maksimal 10 MiB"}</small></div>}
+              {error && <div className="error-banner" role="alert"><span>{error}</span><button type="button" className="error-close" aria-label="Tutup peringatan" title="Tutup peringatan" onClick={() => setError("")}><Icon name="close" size={16}/></button></div>}
               <div className="editor-bottom"><p className="input-note">{binary ? operation === "decrypt" && source === "text" ? "Pilih Base64 untuk cipherteks hasil salinan." : "Seluruh byte diproses, termasuk header berkas." : "Spasi, angka, dan tanda baca dibuang."}</p><button className="primary-button" type="submit" disabled={busy || pending || hillInvalid}>{busy ? "Memproses..." : operation === "encrypt" ? "Enkripsi pesan" : "Dekripsi pesan"}<Icon name="arrow" size={17}/></button></div>
             </section>
             <section className={`editor-panel result-panel ${result ? "has-result" : ""}`} aria-labelledby="result-title">
@@ -162,7 +164,6 @@ export default function Home() {
           </div>
         </fieldset>
       </form>
-      {error && <div className="error-banner" role="alert">{error}</div>}
       {notice && <div className="notice-banner" role="status">{notice}</div>}
       {result && <>
             <details className="input-preview"><summary>Lihat pesan masukan dan Base64</summary><div className="result-toolbar"><span>{result.normalized ? `Sanitasi: ${result.normalized.slice(0, 100)}${result.normalized.length > 100 ? "…" : ""}` : `${result.inputBytes.length.toLocaleString("id-ID")} byte masukan`}</span><select className="small-select" aria-label="Format pratinjau input" value={inputPreviewMode} onChange={e => setInputPreviewMode(e.target.value)}><option value="base64">Base64</option>{result.inputText !== null && <option value="text">Teks asli</option>}</select></div><textarea aria-label="Pratinjau input" className="output-area" readOnly value={preview.slice(0, PREVIEW_LIMIT)}/><button className="text-button" type="button" onClick={() => copy(preview)}>Salin input lengkap</button></details>
