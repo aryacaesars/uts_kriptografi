@@ -14,8 +14,23 @@ export const ALGORITHMS = [
 export const isBinary = id => id === "extended" || id === "super";
 export const hillAvailable = () => ciphers.getHillModule() !== null;
 export const MAX_INPUT_BYTES = 10 * 1024 * 1024;
+const BINARY_PAYLOAD_MARKER = new TextEncoder().encode("KRIP-DATA-V1\0");
 // A maximum-sized plaintext must still fit when its KRIP container is uploaded.
 export const maxInputBytes = (operation, fileName) => MAX_INPUT_BYTES + (operation === "decrypt" && fileName ? 260 : 0);
+
+function addBinaryPayloadMarker(bytes) {
+  const payload = new Uint8Array(BINARY_PAYLOAD_MARKER.length + bytes.length);
+  payload.set(BINARY_PAYLOAD_MARKER);
+  payload.set(bytes, BINARY_PAYLOAD_MARKER.length);
+  return payload;
+}
+
+function removeBinaryPayloadMarker(bytes) {
+  if (bytes.length < BINARY_PAYLOAD_MARKER.length || BINARY_PAYLOAD_MARKER.some((value, index) => bytes[index] !== value)) {
+    throw new Error("Kunci salah atau payload berkas rusak. Gunakan kunci dan konfigurasi yang sama seperti saat enkripsi.");
+  }
+  return bytes.slice(BINARY_PAYLOAD_MARKER.length);
+}
 
 function decodeText(bytes) {
   let text;
@@ -49,18 +64,21 @@ export function processRequest({ algorithm, operation, inputBytes, fileName = ""
     data = container.encryptedBytes;
     extension = container.originalExtension;
   }
-  if (data.length > MAX_INPUT_BYTES) throw new Error("Batas payload 10 MiB. Pilih berkas atau teks yang lebih kecil.");
+  const maxPayloadBytes = MAX_INPUT_BYTES + (isBinary(algorithm) ? BINARY_PAYLOAD_MARKER.length : 0);
+  if (data.length > maxPayloadBytes) throw new Error("Batas payload 10 MiB. Pilih berkas atau teks yang lebih kecil.");
   if (!/^[a-zA-Z0-9_-]{1,255}$/.test(extension)) throw new Error("Ekstensi pada berkas tidak valid.");
   let text = null;
   let normalized = null;
   let output;
   if (isBinary(algorithm)) {
     if (typeof key !== "string" || key.length === 0) throw new Error("Kunci byte tidak boleh kosong.");
+    const binaryData = operation === "encrypt" ? addBinaryPayloadMarker(data) : data;
     if (algorithm === "super") {
       if (typeof transpositionKey === "number" && (!Number.isInteger(transpositionKey) || transpositionKey < 2 || transpositionKey > 1024)) throw new Error("Jumlah kolom harus bilangan bulat dari 2 sampai 1024.");
       if (typeof transpositionKey === "string" && (transpositionKey.trim().length < 2 || transpositionKey.length > 1024)) throw new Error("Kunci kolom harus terdiri dari 2 sampai 1024 karakter.");
-      output = (operation === "encrypt" ? ciphers.encryptSuper : ciphers.decryptSuper)(data, key, transpositionKey);
-    } else output = (operation === "encrypt" ? ciphers.encryptExtendedVigenere : ciphers.decryptExtendedVigenere)(data, key);
+      output = (operation === "encrypt" ? ciphers.encryptSuper : ciphers.decryptSuper)(binaryData, key, transpositionKey);
+    } else output = (operation === "encrypt" ? ciphers.encryptExtendedVigenere : ciphers.decryptExtendedVigenere)(binaryData, key);
+    if (operation === "decrypt") output = removeBinaryPayloadMarker(output);
   } else {
     // Berkas alfabet sengaja hanya menerima teks biasa, bukan format berstruktur/biner.
     if (operation === "encrypt" && fileName && !/\.(txt|md|csv|json|xml|html|sql|log)$/i.test(fileName)) throw new Error("Untuk cipher alfabet unggah teks UTF-8 (.txt/.md/.csv/.json/.xml/.html/.sql/.log). Berkas lain memakai cipher byte.");

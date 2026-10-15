@@ -100,6 +100,14 @@ test("Integrated binary ciphers restore every byte and original extension", () =
   }
 });
 
+test("Integrated binary ciphers reject a changed key or Super transposition key", () => {
+  for (const algorithm of ["extended", "super"]) {
+    const encrypted = request({ algorithm, inputBytes: encode("data rahasia"), fileName: "sample.png", key: "kunci-benar", transpositionKey: "KUNCI" });
+    assert.throws(() => request({ algorithm, operation: "decrypt", inputBytes: encrypted.downloadBytes, fileName: encrypted.downloadName, key: "kunci-salah", transpositionKey: "KUNCI" }), /Kunci salah/);
+    if (algorithm === "super") assert.throws(() => request({ algorithm, operation: "decrypt", inputBytes: encrypted.downloadBytes, fileName: encrypted.downloadName, key: "kunci-benar", transpositionKey: "RAHASIA" }), /Kunci salah/);
+  }
+});
+
 test("Container validation rejects invalid magic, truncation and unsafe extensions", () => {
   for (const inputBytes of [encode("abc"), encode("FAKE\u0003txtabc"), new Uint8Array([75,82,73,80,20,65])]) {
     assert.throws(() => request({ operation: "decrypt", fileName: "bad.dat", inputBytes }));
